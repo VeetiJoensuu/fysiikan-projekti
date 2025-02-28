@@ -3,7 +3,7 @@ import numpy as np
 import streamlit as st
 from scipy.fft import fft
 from scipy.signal import butter, filtfilt, find_peaks
-from geopy.distance import geodesic
+from math import radians, cos, sin, asin, sqrt
 import folium
 from streamlit_folium import st_folium
 
@@ -40,12 +40,22 @@ def cached_compute_fourier_steps(acceleration, sampling_rate=50):
     estimated_steps = step_frequency * len(acceleration) / sampling_rate
     return estimated_steps
 
+def haversine(lon1, lat1, lon2, lat2):
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # Radius of Earth in kilometers
+    return c * r
+
 def compute_distance_speed(location_data):
-    coords = list(zip(location_data['Latitude (°)'], location_data['Longitude (°)']))
-    distances = [geodesic(coords[i], coords[i+1]).meters for i in range(len(coords)-1)]
-    total_distance = sum(distances) / 1000
+    distances = [haversine(location_data['Longitude (°)'][i], location_data['Latitude (°)'][i],
+                           location_data['Longitude (°)'][i+1], location_data['Latitude (°)'][i+1])
+                 for i in range(len(location_data)-1)]
+    total_distance = sum(distances)
     total_time = location_data['Time (s)'].iloc[-1] - location_data['Time (s)'].iloc[0]
-    average_speed_m_s = total_distance * 1000 / total_time if total_time > 0 else 0
+    average_speed_m_s = (total_distance * 1000) / total_time if total_time > 0 else 0
     average_speed_km_h = average_speed_m_s * 3.6
     return total_distance, average_speed_m_s, average_speed_km_h
 
