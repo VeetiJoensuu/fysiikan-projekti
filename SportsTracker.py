@@ -7,12 +7,15 @@ from geopy.distance import geodesic
 import folium
 from streamlit_folium import st_folium
 
-@st.cache_data
-def load_data(file_path):
-    return pd.read_csv(file_path)
+LOCATION_URL = "https://raw.githubusercontent.com/VeetiJoensuu/fysiikan-projekti/main/location.csv"
+ACCELERATION_URL = "https://raw.githubusercontent.com/VeetiJoensuu/fysiikan-projekti/main/acceleration.csv"
 
-location_data = load_data('location.csv')
-acceleration_data = load_data('acceleration.csv')
+@st.cache_data
+def load_data(url):
+    return pd.read_csv(url)
+
+location_data = load_data(LOCATION_URL)
+acceleration_data = load_data(ACCELERATION_URL)
 
 def low_pass_filter(data, cutoff=1.5, fs=50, order=4):
     nyquist = 0.5 * fs
@@ -78,7 +81,3 @@ start_long = location_data['Longitude (°)'].mean()
 map = folium.Map(location=[start_lat, start_long], zoom_start=14)
 folium.PolyLine(location_data[['Latitude (°)', 'Longitude (°)']], color='blue', weight=3.5, opacity=1).add_to(map)
 st_folium(map, width=900, height=650)
-
-
-# pip install pandas numpy streamlit scipy geopy folium streamlit-folium
-# streamlit run SportsTracker.py
